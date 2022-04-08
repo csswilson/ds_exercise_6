@@ -84,7 +84,20 @@ X2020_harvest <- read_csv("https://raw.githubusercontent.com/llendway/scraping_e
 
 2. Read in this [data](https://www.kaggle.com/heeraldedhia/groceries-dataset) from the kaggle website. You will need to download the data first. Save it to your project/repo folder. Do some quick checks of the data to assure it has been read in appropriately.
 
+```{r}
+groceries <- read.csv("Groceries_dataset.csv")
+summary(groceries)
+head(groceries %>% arrange(Date))
+tail(groceries %>% arrange(Date))
+```
+
+
 3. Create a table using `gt` with data from your project or from the `garden_harvest` data if your project data aren't ready. Use at least 3 `gt()` functions.
+
+```{r}
+
+```
+
 
 4. CHALLENGE (not graded): Write code to replicate the table shown below (open the .html file to see it) created from the `garden_harvest` data as best as you can. When you get to coloring the cells, I used the following line of code for the `colors` argument:
   
