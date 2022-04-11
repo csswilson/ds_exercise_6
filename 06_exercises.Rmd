@@ -80,6 +80,8 @@ X2020_harvest <- read_csv("https://raw.githubusercontent.com/llendway/scraping_e
                   date = col_date(format = "%m/%d/%y"), 
                   weight = col_number()),
     skip = 2)
+
+head(X2020_harvest)
 ```
 
 2. Read in this [data](https://www.kaggle.com/heeraldedhia/groceries-dataset) from the kaggle website. You will need to download the data first. Save it to your project/repo folder. Do some quick checks of the data to assure it has been read in appropriately.
@@ -199,12 +201,14 @@ Mac_2017_fall <- tibble(number = course_nums,
 
 7. Create a graph that shows the number of sections offered per department. Hint: The department is a substring of the course number - there are `str_XXX()` functions that can help. Yes, COMP and MATH are the same department, but for this exercise you can just show the results by four letter department code, e.g., with COMP and MATH separate.
 
-```{r}
+```{r, fig.height= 3}
 Mac_2017_fall %>% 
-  summarise(sections = number %>% str_sub( end = -8)) %>% 
-  ggplot(aes(x = sections)) + 
-  geom_histogram(stat = "count") + 
-  coord_flip()
+  summarise(sections = number %>% 
+              str_extract("[A-Z]+")) %>% 
+  ggplot(aes(x = fct_rev(sections))) + 
+  geom_histogram(stat = "count", fill = "#fdc386", color = "royalblue3") + 
+  coord_flip() +
+  labs(title = "Macalester Fall 2017 Classes", subtitle = "Number of sections offered per department", x = "", y ="")
 ```
 
 
@@ -213,6 +217,22 @@ Mac_2017_fall %>%
   * New columns for the length of the title of a course and the length of the description of the course. Hint: `str_length`.  
   * Remove departments that have fewer than 10 sections of courses. To do so, group by department, then remove observations in groups with fewer than 10 sections (Hint: use filter with n()). Then `ungroup()` the data.  
   * Create a visualization of the differences across groups in lengths of course names or course descriptions. Think carefully about the visualization you should be using!
+
+```{r, fig.height= 3}
+Mac_2017_fall %>% 
+  mutate(name_length = name %>% str_length() ,
+         desc_length = descriptions %>% str_length() ,
+         department = 
+              str_extract(number, "[A-Z]+")) %>% 
+  group_by(department) %>% 
+  filter(n() >= 10) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = fct_reorder(department, name_length, median), 
+             y = name_length)) +
+  geom_boxplot(fill = 'lightblue', color = "navy") +
+  coord_flip() +
+  labs(title = "Macalester Fall 2017 Classes", subtitle = "The length of course titles offered per department", x = "", y ="")
+```
 
 
   
