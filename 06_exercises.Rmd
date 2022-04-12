@@ -97,7 +97,7 @@ tail(groceries %>% arrange(Date))
 3. Create a table using `gt` with data from your project or from the `garden_harvest` data if your project data aren't ready. Use at least 3 `gt()` functions.
 
 ```{r}
-
+all_prices <- readr::read_csv('All_price_info.csv')
 ```
 
 
@@ -114,6 +114,11 @@ colors = scales::col_numeric(
 
   
 5. Use `patchwork` operators and functions to combine at least two graphs using your project data or `garden_harvest` data if your project data aren't read.
+
+```{r}
+
+```
+
   
 ## Webscraping exercise (also from tutorial)
 
