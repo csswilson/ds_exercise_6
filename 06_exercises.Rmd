@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -98,25 +98,105 @@ tail(groceries %>% arrange(Date))
 
 ```{r}
 all_prices <- readr::read_csv('All_price_info.csv')
+
+# Clean project data
+sector_prices <- all_prices %>% 
+  filter(MSN == 'ESCCD' | MSN == 'ESICD' | MSN == 'ESRCD') %>% 
+  select(-'Data_Status') %>% 
+  rename(Sector = MSN)
+   
+pivot_longer(cols = -c('Data_Status', 'State', 'MSN'),
+               names_to = "Year",
+               values_to = "Price") %>% 
+  select(-'Data_Status') %>% 
+  mutate(Year = year(years(Year)))
+  
+sector_prices$Sector[sector_prices$Sector == "ESCCD"] <- "Commercial"
+sector_prices$Sector[sector_prices$Sector == "ESICD"] <- "Industrial"
+sector_prices$Sector[sector_prices$Sector == "ESRCD"] <- "Residential"
+
+# table using gt()
+
+sector_prices %>% 
+  gt(
+    rowname_col = "State",
+    groupname_col = "Sector"
+  ) %>% 
+  tab_header(
+    title = "US Electricity Prices per BTU per Sector 1970 - 2019",
+    subtitle = md("Data from The US Energy Information Administration")) %>% 
+  opt_align_table_header(align = "left") %>% 
+  tab_options(column_labels.background.color = "navyblue",
+              row_group.background.color =  "royalblue") %>% 
+  fmt_currency(
+   columns = `1970`:`2019`,
+    currency = "dollar"
+  ) 
+
 ```
 
 
 4. CHALLENGE (not graded): Write code to replicate the table shown below (open the .html file to see it) created from the `garden_harvest` data as best as you can. When you get to coloring the cells, I used the following line of code for the `colors` argument:
   
 ```{r, eval=FALSE}
-colors = scales::col_numeric(
-      palette = paletteer::paletteer_d(
-        palette = "RColorBrewer::YlGn"
-      ) %>% as.character()
+#colors = scales::col_numeric(
+#      palette = paletteer::paletteer_d(
+ #       palette = "RColorBrewer::YlGn"
+ #     ) %>% as.character()
 ```
 
-![](garden_table.html){width=600, height=1000}
-
-  
 5. Use `patchwork` operators and functions to combine at least two graphs using your project data or `garden_harvest` data if your project data aren't read.
 
-```{r}
+```{r, fig.alt= "This is a graph showing how electricity prices in the Midwest (MN, WI, IA, IL) have changed since 1970. There are three lines per state, one for each sector buying electricity: The industrial sector, the commercial sector and the residential sector. In general, the prices of electricity have increase over time across all sectors, wiht residential costing the most and industrial costing the least."}
 
+sector_prices <- all_prices %>% 
+  filter(MSN == 'ESCCD' | MSN == 'ESICD' | MSN == 'ESRCD') %>% 
+   pivot_longer(cols = -c('Data_Status', 'State', 'MSN'),
+               names_to = "Year",
+               values_to = "Price") %>% 
+  select(-'Data_Status') %>% 
+  mutate(Year = year(years(Year))) 
+
+sector_prices$MSN[sector_prices$MSN == "ESCCD"] <- "commercial_price"
+sector_prices$MSN[sector_prices$MSN == "ESICD"] <- "industrial_price"
+sector_prices$MSN[sector_prices$MSN == "ESRCD"] <- "resid_price"
+
+pallet <- c("darkorchid4", "darkseagreen4", "deeppink3")
+
+minnesota <- sector_prices %>% 
+  filter(State == 'MN') %>% 
+  ggplot(aes(x = Year, y = Price, color = MSN)) +
+  geom_line() +
+  labs(title = "Minnesota", y = "Dollar per BTU", x = "") +
+  scale_color_manual(values = pallet, labels = c("Commercial", "Industrial", "Residential")) +
+  theme(legend.position = "none") 
+
+illinois <- sector_prices %>% 
+  filter(State == 'IL') %>% 
+  ggplot(aes(x = Year, y = Price, color = MSN)) +
+  geom_line() +
+  labs(title = "Illinois", color = "Sector", y = "", x = "") +
+  scale_color_manual(values = pallet, labels = c("Commercial", "Industrial", "Residential")) +
+  theme(legend.position = "none") 
+
+wisconsin <- sector_prices %>% 
+  filter(State == 'WI') %>% 
+  ggplot(aes(x = Year, y = Price, color = MSN)) +
+  geom_line() +
+  labs(title = "Wisconsin", y = "", x = "") +
+  scale_color_manual(values = pallet, labels = c("Commercial", "Industrial", "Residential")) +
+  theme(legend.position = "none") 
+
+iowa <- sector_prices %>% 
+  filter(State == 'IA') %>% 
+  ggplot(aes(x = Year, y = Price, color = MSN)) +
+  geom_line() +
+  labs(title = "Iowa", color = "Sector", y = "Dollars per BTU", x = "") +
+  scale_color_manual(values = pallet, labels = c("Commercial", "Industrial", "Residential")) +
+  theme(legend.position = "bottom") 
+
+minnesota  + wisconsin  + iowa + illinois + 
+  plot_annotation(title = "Midwest Electricity Prices per Sector") 
 ```
 
   
@@ -206,7 +286,7 @@ Mac_2017_fall <- tibble(number = course_nums,
 
 7. Create a graph that shows the number of sections offered per department. Hint: The department is a substring of the course number - there are `str_XXX()` functions that can help. Yes, COMP and MATH are the same department, but for this exercise you can just show the results by four letter department code, e.g., with COMP and MATH separate.
 
-```{r, fig.height= 3}
+```{r, fig.height= 6, fig.alt= "This is a bar graph showing the number of individual classes offerend for the Fall semester in 2017 at Macalester College, per department. It appears that the Hispanic department offered the largest number of classes. This is counting the each section per topic as an individual class."}
 Mac_2017_fall %>% 
   summarise(sections = number %>% 
               str_extract("[A-Z]+")) %>% 
@@ -223,7 +303,8 @@ Mac_2017_fall %>%
   * Remove departments that have fewer than 10 sections of courses. To do so, group by department, then remove observations in groups with fewer than 10 sections (Hint: use filter with n()). Then `ungroup()` the data.  
   * Create a visualization of the differences across groups in lengths of course names or course descriptions. Think carefully about the visualization you should be using!
 
-```{r, fig.height= 3}
+```{r, fig.height= 6, fig.alt="This is a boxplot showing the distributions of class title lengths per department, for the Fall semester in 2017 at Macalester college. The International Studies department had a the highest median class title length and a very large distribution of lengths. Meanwhile, PE classes had the shortest class titles."}
+
 Mac_2017_fall %>% 
   mutate(name_length = name %>% str_length() ,
          desc_length = descriptions %>% str_length() ,
@@ -238,8 +319,5 @@ Mac_2017_fall %>%
   coord_flip() +
   labs(title = "Macalester Fall 2017 Classes", subtitle = "The length of course titles offered per department", x = "", y ="")
 ```
-
-
-  
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
